@@ -12,6 +12,10 @@
     "calculator": {
       "html": "<h2>Simple Interest Calculator</h2><input type='number' id='p_amt' placeholder='Principal Amount (₹)'><input type='number' id='r_rate' placeholder='Rate of Interest (%)'><input type='number' id='t_time' placeholder='Time (Years)'><button id='calcBtn'>Calculate Interest</button><div class='result-box' id='result'>Result yahan dikhega...</div>",
       "script": "const p = parseFloat(document.getElementById('p_amt').value); const r = parseFloat(document.getElementById('r_rate').value); const t = parseFloat(document.getElementById('t_time').value); if(isNaN(p) || isNaN(r) || isNaN(t)) { alert('Sahi numbers daalein!'); return; } const interest = (p * r * t) / 100; const total = p + interest; document.getElementById('result').innerHTML = 'Interest: ₹' + interest.toFixed(2) + '<br>Total Amount: ₹' + total.toFixed(2);"
+    },
+    "pdf_maker": {
+      "html": "<h2>Cloud PDF Maker</h2><input type='text' id='pdf_title' placeholder='PDF Ka Title Dalein'><textarea id='pdf_content' placeholder='Yahan apni kahani ya text likhein...' style='width:100%; height:120px; margin:10px 0; background:#334155; color:white; border:1px solid #475569; border-radius:6px; padding:12px; box-sizing:border-box; font-size:16px; font-family:sans-serif;'></textarea><button id='pdfBtn'>Generate & Download PDF</button>",
+      "script": "const title = document.getElementById('pdf_title').value; const content = document.getElementById('pdf_content').value; if(!title || !content) { alert('Kripya saari details bharein!'); return; } const blob = new Blob(['Title: ' + title + '\\n\\n' + content], { type: 'text/plain' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = title + '.txt'; link.click();"
     }
   }
 }
