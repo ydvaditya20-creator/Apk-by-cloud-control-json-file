@@ -1,7 +1,8 @@
 {
   "page_settings": {
     "background_color": "#0f172a",
-    "text_color": "#ffffff"
+    "text_color": "#ffffff",
+    "initial_screen": "login"
   },
   "screens": {
     "login": {
