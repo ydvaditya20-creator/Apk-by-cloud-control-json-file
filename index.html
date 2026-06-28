@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure JSON App Wrapper</title>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .app-card { background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); box-sizing: border-box; }
+        h2 { margin-top: 0; color: #38bdf8; text-align: center; font-family: sans-serif; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #475569; border-radius: 6px; background: #334155; color: #fff; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: #38bdf8; color: #0f172a; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        .result-box { margin-top: 20px; padding: 12px; background: #334155; border-radius: 6px; border-left: 4px solid #38bdf8; font-weight: bold; font-family: sans-serif; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <!-- Poora dynamic content is div ke andar aayega -->
+    <div class="app-card" id="app-box">
+        <p style="text-align: center; color: #aaa; font-family: sans-serif;">Loading system...</p>
+    </div>
+
+    <script>
+        // !! APNA GITHUB RAW JSON URL YAHAN DALEIN !!
+        const jsonUrl = "https://githubusercontent.com";
+        let cloudData = null;
+
+        function loadCloudEngine() {
+            fetch(`${jsonUrl}?t=${new Date().getTime()}`)
+                .then(res => res.json())
+                .then(data => {
+                    cloudData = data;
+                    document.body.style.backgroundColor = data.page_settings.background_color;
+                    
+                    // Sabse pehle 'login' screen ko render karenge
+                    renderScreen('login');
+                })
+                .catch(err => {
+                    document.getElementById('app-box').innerHTML = "<p style='color:red;text-align:center;'>Cloud sync error.</p>";
+                });
+        }
+
+        // Yeh akele function poore app ki har screen ko dynamically handle karega
+        function renderScreen(screenName) {
+            const screen = cloudData.screens[screenName];
+            const box = document.getElementById('app-box');
+            
+            // 1. JSON se aaya HTML content div mein daalna
+            box.innerHTML = screen.html;
+
+            // 2. Us screen ke andar jo bhi button ho, uspar click action bind karna
+            const actionBtn = box.querySelector('button');
+            if (actionBtn && screen.script) {
+                actionBtn.onclick = function() {
+                    // Script text ko real execution code mein badalna
+                    const runScript = new Function(screen.script);
+                    runScript();
+                };
+            }
+        }
+
+        // App launch par engine chalu karein
+        loadCloudEngine();
+    </script>
+
+</body>
+</html>
