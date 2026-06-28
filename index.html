@@ -7,8 +7,8 @@
 <body>
     <script>
         // CONFIGURATION: Apne GitHub Hosted JSON ka Raw URL yahaan dalein
-        const GITHUB_JSON_URL = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/data.json";
-
+        const GITHUB_JSON_URL = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/daata.json";
+    
         async function fetchAndRenderAll() {
             try {
                 const response = await fetch(GITHUB_JSON_URL);
@@ -95,10 +95,7 @@
         // DOM tayar hote hi immediate execution
         window.addEventListener('DOMContentLoaded', fetchAndRenderAll);
   // Har 5 second mein background data refresh karne ke liye loop function
-setInterval(async function() {
-    console.log("Auto-refreshing content from GitHub...");
-    await fetchAndRenderAll();
-}, 5000);
+
 
   
     </script>
