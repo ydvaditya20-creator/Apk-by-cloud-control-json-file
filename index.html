@@ -15,14 +15,13 @@
 </head>
 <body>
 
-    <!-- Poora dynamic content is div ke andar aayega -->
     <div class="app-card" id="app-box">
         <p style="text-align: center; color: #aaa; font-family: sans-serif;">Loading system...</p>
     </div>
 
     <script>
         // !! APNA GITHUB RAW JSON URL YAHAN DALEIN !!
-        const jsonUrl = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/data.json";
+        const jsonUrl = "https://githubusercontent.com";
         let cloudData = null;
 
         function loadCloudEngine() {
@@ -32,27 +31,29 @@
                     cloudData = data;
                     document.body.style.backgroundColor = data.page_settings.background_color;
                     
-                    // Sabse pehle 'login' screen ko render karenge
-                    renderScreen('login');
+                    // JSON se 'initial_screen' ka naam read karke wahi screen load karna
+                    const firstScreen = data.page_settings.initial_screen || 'login';
+                    renderScreen(firstScreen);
                 })
                 .catch(err => {
                     document.getElementById('app-box').innerHTML = "<p style='color:red;text-align:center;'>Cloud sync error.</p>";
                 });
         }
 
-        // Yeh akele function poore app ki har screen ko dynamically handle karega
         function renderScreen(screenName) {
             const screen = cloudData.screens[screenName];
             const box = document.getElementById('app-box');
             
-            // 1. JSON se aaya HTML content div mein daalna
+            if (!screen) {
+                box.innerHTML = "<p style='color:red;text-align:center;'>Screen not found in JSON!</p>";
+                return;
+            }
+
             box.innerHTML = screen.html;
 
-            // 2. Us screen ke andar jo bhi button ho, uspar click action bind karna
             const actionBtn = box.querySelector('button');
             if (actionBtn && screen.script) {
                 actionBtn.onclick = function() {
-                    // Script text ko real execution code mein badalna
                     const runScript = new Function(screen.script);
                     runScript();
                 };
