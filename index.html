@@ -1,158 +1,106 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro App Loader Engine</title>
-    <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: sans-serif; background-color: #0f172a; color: #fff; }
-        .app-card { background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 10px 15px rgba(0,0,0,0.3); box-sizing: border-box; }
-        .loading-text { text-align: center; color: #38bdf8; font-weight: bold; }
-    </style>
+    <title>Loading...</title>
 </head>
 <body>
-
-    <!-- Dynamic Window Wrapper -->
-    <div class="app-card" id="app-box">
-        <p class="loading-text">Synchronizing cloud architecture...</p>
-    </div>
-
     <script>
-        // !! APNA GITHUB RAW JSON URL YAHAN DALEIN !!
-        const jsonUrl = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/data.json";
-        
-        let cloudData = null;
-        let currentScreen = null;
+        // CONFIGURATION: Apne GitHub Hosted JSON ka Raw URL yahaan dalein
+        const GITHUB_JSON_URL = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/data.json";
 
-        // Ek helper function jo escaped strings (\n aur \") ko sahi karega
-        function cleanString(str) {
-            if (!str) return "";
-            return str
-                .replace(/\\n/g, '\n')  // \n ko asli line break banana
-                .replace(/\\"/g, '"')   // \" ko asli double quote banana
-                .replace(/\\'/g, "'")   // \' ko asli single quote banana
-                .replace(/\\/g, '');    // Bachi hui extra backslashes hatana
-        }
+        async function fetchAndRenderAll() {
+            try {
+                const response = await fetch(GITHUB_JSON_URL);
+                if (!response.ok) {
+                    console.error("GitHub se data nahi mila. Status:", response.status);
+                    return;
+                }
+                
+                const data = await response.json();
 
-        function loadCloudEngine() {
-            fetch(`${jsonUrl}?t=${new Date().getTime()}`)
-                .then(res => res.json())
-                .then(async data => {
-                    cloudData = data;
-                    const settings = data.page_settings;
+                // 1. Head clear karein taaki purani styles/meta bilkul saaf ho jayein
+                document.head.innerHTML = '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">';
 
-                    // 1. Meta Tags Clean & Inject
-                    if (settings.meta_tags) {
-                        document.querySelectorAll('.cloud-meta').forEach(el => el.remove());
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = cleanString(settings.meta_tags);
-                        Array.from(tempDiv.childNodes).forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                node.classList.add('cloud-meta');
-                                document.head.appendChild(node);
-                            }
+                // 2. Set Page Title
+                if (data.head && data.head.title) {
+                    document.title = data.head.title;
+                }
+
+                // 3. Inject Meta Tags
+                if (data.head && data.head.meta) {
+                    data.head.meta.forEach(metaData => {
+                        const meta = document.createElement('meta');
+                        Object.keys(metaData).forEach(key => meta.setAttribute(key, metaData[key]));
+                        document.head.appendChild(meta);
+                    });
+                }
+
+                // 4. Inject External CSS Links (Sahi Order ke liye Promise Use Kiya Hai)
+                if (data.css && data.css.external) {
+                    for (const href of data.css.external) {
+                        await new Promise((resolve) => {
+                            const link = document.createElement('link');
+                            link.rel = 'stylesheet';
+                            link.href = href;
+                            link.onload = resolve;
+                            link.onerror = resolve; // Agar link fail ho tab bhi page na ruke
+                            document.head.appendChild(link);
                         });
                     }
+                }
 
-                    // 2. Title Setup
-                    if (settings.title) document.title = settings.title;
+                // 5. Inject Internal CSS Styles (External CSS ke humesha BAAD mein aani chahiye)
+                if (data.css && data.css.internal) {
+                    data.css.internal.forEach(cssText => {
+                        const style = document.createElement('style');
+                        style.textContent = cssText;
+                        document.head.appendChild(style);
+                    });
+                }
 
-                    // 3. External CSS Link Integration
-                    if (settings.external_css && settings.external_css.length > 0) {
-                        settings.external_css.forEach(href => {
-                            if (!document.querySelector(`link[href="${href}"]`)) {
-                                const link = document.createElement('link');
-                                link.rel = 'stylesheet';
-                                link.href = href;
-                                document.head.appendChild(link);
-                            }
+                // 6. Body ka sara data override karein
+                if (data.body && data.body.html) {
+                    document.body.innerHTML = data.body.html;
+                }
+
+                // 7. Inject External Scripts
+                if (data.script && data.script.external) {
+                    for (const src of data.script.external) {
+                        await new Promise((resolve) => {
+                            const script = document.createElement('script');
+                            script.src = src;
+                            script.async = false;
+                            script.onload = resolve;
+                            script.onerror = resolve;
+                            document.body.appendChild(script);
                         });
                     }
+                }
 
-                    // 4. Custom Inline/Internal CSS Parse & Inject
-                    if (settings.custom_css) {
-                        let existingStyle = document.getElementById('cloud-styles');
-                        if (!existingStyle) {
-                            existingStyle = document.createElement('style');
-                            existingStyle.id = 'cloud-styles';
-                            document.head.appendChild(existingStyle);
-                        }
-                        existingStyle.textContent = cleanString(settings.custom_css);
-                    }
+                // 8. Inject Internal Scripts
+                if (data.script && data.script.internal) {
+                    data.script.internal.forEach(jsText => {
+                        const script = document.createElement('script');
+                        script.textContent = jsText;
+                        document.body.appendChild(script);
+                    });
+                }
 
-                    // 5. External Heavy JS Libraries Handling
-                    if (settings.external_scripts && settings.external_scripts.length > 0) {
-                        for (const src of settings.external_scripts) {
-                            if (!document.querySelector(`script[src="${src}"]`)) {
-                                await new Promise((resolve) => {
-                                    const script = document.createElement('script');
-                                    script.src = src;
-                                    script.onload = resolve;
-                                    document.head.appendChild(script);
-                                });
-                            }
-                        }
-                    }
-
-                    // 6. Router System for Initial Setup
-                    if (!currentScreen) {
-                        currentScreen = settings.initial_screen;
-                        renderScreen(currentScreen);
-                    } else {
-                        renderScreen(currentScreen);
-                    }
-                })
-                .catch(err => {
-                    if (!cloudData) {
-                        document.getElementById('app-box').innerHTML = "<p style='color:red;text-align:center;'>Syncing Error. Re-trying...</p>";
-                    }
-                    console.log("Parsing fault check:", err);
-                });
-        }
-
-        function renderScreen(screenName) {
-            if (!cloudData || !cloudData.screens[screenName]) return;
-            
-            currentScreen = screenName;
-            const screen = cloudData.screens[screenName];
-            const box = document.getElementById('app-box');
-            
-            // State restoration framework (Typing safety check)
-            const activeInputId = document.activeElement ? document.activeElement.id : null;
-            const inputValues = {};
-            box.querySelectorAll('input, textarea').forEach(input => {
-                if (input.id) inputValues[input.id] = input.value;
-            });
-
-            // Clean string function lagane se pure HTML text safely execute ho jayega
-            box.innerHTML = cleanString(screen.html);
-
-            // Inputs aur data fields ko refresh ke baad restore karna
-            for (const id in inputValues) {
-                const inputElement = document.getElementById(id);
-                if (inputElement) inputElement.value = inputValues[id];
-            }
-            if (activeInputId) {
-                const activeElement = document.getElementById(activeInputId);
-                if (activeElement) activeElement.focus();
-            }
-
-            // JavaScript execution controller
-            const actionBtn = box.querySelector('button');
-            if (actionBtn && screen.script) {
-                actionBtn.onclick = function() {
-                    // String code ko process karke dynamic function execute karna
-                    const cleanJsCode = cleanString(screen.script);
-                    const runScript = new Function(cleanJsCode);
-                    runScript();
-                };
+            } catch (error) {
+                console.error("Rendering mein error aaya:", error);
             }
         }
 
-        // Automatic Regulator loop (Har 5 Seconds me)
-        setInterval(loadCloudEngine, 5000);
-        loadCloudEngine();
+        // DOM tayar hote hi immediate execution
+        window.addEventListener('DOMContentLoaded', fetchAndRenderAll);
+  // Har 5 second mein background data refresh karne ke liye loop function
+setInterval(async function() {
+    console.log("Auto-refreshing content from GitHub...");
+    await fetchAndRenderAll();
+}, 5000);
+
+  
     </script>
-
 </body>
 </html>
