@@ -1,0 +1,16 @@
+{
+  "page_settings": {
+    "background_color": "#0f172a",
+    "text_color": "#ffffff"
+  },
+  "screens": {
+    "login": {
+      "html": "<h2>Cloud Secure Login</h2><input type='text' id='user' placeholder='Username (admin)'><input type='password' id='pass' placeholder='Password (1234)'><button id='loginBtn'>Verify & Login</button>",
+      "script": "const u = document.getElementById('user').value; const p = document.getElementById('pass').value; if(u === 'admin' && p === '1234') { renderScreen('calculator'); } else { alert('Galat Username ya Password!'); }"
+    },
+    "calculator": {
+      "html": "<h2>Simple Interest Calculator</h2><input type='number' id='p_amt' placeholder='Principal Amount (₹)'><input type='number' id='r_rate' placeholder='Rate of Interest (%)'><input type='number' id='t_time' placeholder='Time (Years)'><button id='calcBtn'>Calculate Interest</button><div class='result-box' id='result'>Result yahan dikhega...</div>",
+      "script": "const p = parseFloat(document.getElementById('p_amt').value); const r = parseFloat(document.getElementById('r_rate').value); const t = parseFloat(document.getElementById('t_time').value); if(isNaN(p) || isNaN(r) || isNaN(t)) { alert('Sahi numbers daalein!'); return; } const interest = (p * r * t) / 100; const total = p + interest; document.getElementById('result').innerHTML = 'Interest: ₹' + interest.toFixed(2) + '<br>Total Amount: ₹' + total.toFixed(2);"
+    }
+  }
+}
