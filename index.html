@@ -1,56 +1,133 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
+    <!-- Yeh elements default hain, baki sab JSON se live override ho jayenge -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pure JSON App Wrapper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro App Loader</title>
     <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .app-card { background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); box-sizing: border-box; }
-        h2 { margin-top: 0; color: #38bdf8; text-align: center; font-family: sans-serif; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #475569; border-radius: 6px; background: #334155; color: #fff; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 14px; background: #38bdf8; color: #0f172a; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        .result-box { margin-top: 20px; padding: 12px; background: #334155; border-radius: 6px; border-left: 4px solid #38bdf8; font-weight: bold; font-family: sans-serif; line-height: 1.6; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: sans-serif; background-color: #0f172a; color: #fff; }
+        .app-card { background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 10px 15px rgba(0,0,0,0.3); box-sizing: border-box; }
+        .loading-text { text-align: center; color: #38bdf8; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <!-- Main dynamic viewport container -->
     <div class="app-card" id="app-box">
-        <p style="text-align: center; color: #aaa; font-family: sans-serif;">Loading system...</p>
+        <p class="loading-text">Synchronizing systems with secure cloud...</p>
     </div>
 
     <script>
         // !! APNA GITHUB RAW JSON URL YAHAN DALEIN !!
-        const jsonUrl = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/data.json";
+        const jsonUrl = "https://githubusercontent.com";
+        
         let cloudData = null;
+        let currentScreen = null;
 
         function loadCloudEngine() {
             fetch(`${jsonUrl}?t=${new Date().getTime()}`)
                 .then(res => res.json())
-                .then(data => {
+                .then(async data => {
                     cloudData = data;
-                    document.body.style.backgroundColor = data.page_settings.background_color;
-                    
-                    // JSON se 'initial_screen' ka naam read karke wahi screen load karna
-                    const firstScreen = data.page_settings.initial_screen || 'login';
-                    renderScreen(firstScreen);
+                    const settings = data.page_settings;
+
+                    // 1. Meta Tags aur Quality injection
+                    if (settings.meta_tags) {
+                        // Purane dynamic meta tags hatana taaki double na ho
+                        document.querySelectorAll('.cloud-meta').forEach(el => el.remove());
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = settings.meta_tags;
+                        Array.from(tempDiv.childNodes).forEach(node => {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                node.classList.add('cloud-meta');
+                                document.head.appendChild(node);
+                            }
+                        });
+                    }
+
+                    // 2. Title set karna
+                    if (settings.title) document.title = settings.title;
+
+                    // 3. External CSS Links inject karna
+                    if (settings.external_css && settings.external_css.length > 0) {
+                        settings.external_css.forEach(href => {
+                            if (!document.querySelector(`link[href="${href}"]`)) {
+                                const link = document.createElement('link');
+                                link.rel = 'stylesheet';
+                                link.href = href;
+                                document.head.appendChild(link);
+                            }
+                        });
+                    }
+
+                    // 4. Custom Local CSS Inject system
+                    if (settings.custom_css) {
+                        let existingStyle = document.getElementById('cloud-styles');
+                        if (!existingStyle) {
+                            existingStyle = document.createElement('style');
+                            existingStyle.id = 'cloud-styles';
+                            document.head.appendChild(existingStyle);
+                        }
+                        existingStyle.textContent = settings.custom_css;
+                    }
+
+                    // 5. External JS Libraries (jaise jsPDF, Sheets APIs) ko sequential load karna
+                    if (settings.external_scripts && settings.external_scripts.length > 0) {
+                        for (const src of settings.external_scripts) {
+                            if (!document.querySelector(`script[src="${src}"]`)) {
+                                await new Promise((resolve) => {
+                                    const script = document.createElement('script');
+                                    script.src = src;
+                                    script.onload = resolve;
+                                    document.head.appendChild(script);
+                                });
+                            }
+                        }
+                    }
+
+                    // 6. Screens initialization aur layout render karna
+                    if (!currentScreen) {
+                        currentScreen = settings.initial_screen;
+                        renderScreen(currentScreen);
+                    } else {
+                        renderScreen(currentScreen);
+                    }
                 })
                 .catch(err => {
-                    document.getElementById('app-box').innerHTML = "<p style='color:red;text-align:center;'>Cloud sync error.</p>";
+                    if (!cloudData) {
+                        document.getElementById('app-box').innerHTML = "<p style='color:red;text-align:center;'>Syncing Error. Re-trying...</p>";
+                    }
                 });
         }
 
         function renderScreen(screenName) {
+            if (!cloudData || !cloudData.screens[screenName]) return;
+            
+            currentScreen = screenName;
             const screen = cloudData.screens[screenName];
             const box = document.getElementById('app-box');
             
-            if (!screen) {
-                box.innerHTML = "<p style='color:red;text-align:center;'>Screen not found in JSON!</p>";
-                return;
-            }
+            // Auto-refresh typing protection
+            const activeInputId = document.activeElement ? document.activeElement.id : null;
+            const inputValues = {};
+            box.querySelectorAll('input, textarea').forEach(input => {
+                if (input.id) inputValues[input.id] = input.value;
+            });
 
             box.innerHTML = screen.html;
 
+            // Form states restore karna
+            for (const id in inputValues) {
+                const inputElement = document.getElementById(id);
+                if (inputElement) inputElement.value = inputValues[id];
+            }
+            if (activeInputId) {
+                const activeElement = document.getElementById(activeInputId);
+                if (activeElement) activeElement.focus();
+            }
+
+            // JavaScript Action logic link karna
             const actionBtn = box.querySelector('button');
             if (actionBtn && screen.script) {
                 actionBtn.onclick = function() {
@@ -60,7 +137,8 @@
             }
         }
 
-        // App launch par engine chalu karein
+        // Background Cloud Auto-Sync Har 5 Second Me
+        setInterval(loadCloudEngine, 5000);
         loadCloudEngine();
     </script>
 
