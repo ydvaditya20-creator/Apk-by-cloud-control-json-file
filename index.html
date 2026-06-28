@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <!-- Yeh elements default hain, baki sab JSON se live override ho jayenge -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro App Loader</title>
+    <title>Pro App Loader Engine</title>
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: sans-serif; background-color: #0f172a; color: #fff; }
         .app-card { background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 10px 15px rgba(0,0,0,0.3); box-sizing: border-box; }
@@ -13,17 +12,27 @@
 </head>
 <body>
 
-    <!-- Main dynamic viewport container -->
+    <!-- Dynamic Window Wrapper -->
     <div class="app-card" id="app-box">
-        <p class="loading-text">Synchronizing systems with secure cloud...</p>
+        <p class="loading-text">Synchronizing cloud architecture...</p>
     </div>
 
     <script>
         // !! APNA GITHUB RAW JSON URL YAHAN DALEIN !!
-        const jsonUrl = "https://raw.githubusercontent.com/ydvaditya20-creator/Apk-by-cloud-control-json-file/refs/heads/main/data.json";
+        const jsonUrl = "https://githubusercontent.com";
         
         let cloudData = null;
         let currentScreen = null;
+
+        // Ek helper function jo escaped strings (\n aur \") ko sahi karega
+        function cleanString(str) {
+            if (!str) return "";
+            return str
+                .replace(/\\n/g, '\n')  // \n ko asli line break banana
+                .replace(/\\"/g, '"')   // \" ko asli double quote banana
+                .replace(/\\'/g, "'")   // \' ko asli single quote banana
+                .replace(/\\/g, '');    // Bachi hui extra backslashes hatana
+        }
 
         function loadCloudEngine() {
             fetch(`${jsonUrl}?t=${new Date().getTime()}`)
@@ -32,12 +41,11 @@
                     cloudData = data;
                     const settings = data.page_settings;
 
-                    // 1. Meta Tags aur Quality injection
+                    // 1. Meta Tags Clean & Inject
                     if (settings.meta_tags) {
-                        // Purane dynamic meta tags hatana taaki double na ho
                         document.querySelectorAll('.cloud-meta').forEach(el => el.remove());
                         const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = settings.meta_tags;
+                        tempDiv.innerHTML = cleanString(settings.meta_tags);
                         Array.from(tempDiv.childNodes).forEach(node => {
                             if (node.nodeType === Node.ELEMENT_NODE) {
                                 node.classList.add('cloud-meta');
@@ -46,10 +54,10 @@
                         });
                     }
 
-                    // 2. Title set karna
+                    // 2. Title Setup
                     if (settings.title) document.title = settings.title;
 
-                    // 3. External CSS Links inject karna
+                    // 3. External CSS Link Integration
                     if (settings.external_css && settings.external_css.length > 0) {
                         settings.external_css.forEach(href => {
                             if (!document.querySelector(`link[href="${href}"]`)) {
@@ -61,7 +69,7 @@
                         });
                     }
 
-                    // 4. Custom Local CSS Inject system
+                    // 4. Custom Inline/Internal CSS Parse & Inject
                     if (settings.custom_css) {
                         let existingStyle = document.getElementById('cloud-styles');
                         if (!existingStyle) {
@@ -69,10 +77,10 @@
                             existingStyle.id = 'cloud-styles';
                             document.head.appendChild(existingStyle);
                         }
-                        existingStyle.textContent = settings.custom_css;
+                        existingStyle.textContent = cleanString(settings.custom_css);
                     }
 
-                    // 5. External JS Libraries (jaise jsPDF, Sheets APIs) ko sequential load karna
+                    // 5. External Heavy JS Libraries Handling
                     if (settings.external_scripts && settings.external_scripts.length > 0) {
                         for (const src of settings.external_scripts) {
                             if (!document.querySelector(`script[src="${src}"]`)) {
@@ -86,7 +94,7 @@
                         }
                     }
 
-                    // 6. Screens initialization aur layout render karna
+                    // 6. Router System for Initial Setup
                     if (!currentScreen) {
                         currentScreen = settings.initial_screen;
                         renderScreen(currentScreen);
@@ -98,6 +106,7 @@
                     if (!cloudData) {
                         document.getElementById('app-box').innerHTML = "<p style='color:red;text-align:center;'>Syncing Error. Re-trying...</p>";
                     }
+                    console.log("Parsing fault check:", err);
                 });
         }
 
@@ -108,16 +117,17 @@
             const screen = cloudData.screens[screenName];
             const box = document.getElementById('app-box');
             
-            // Auto-refresh typing protection
+            // State restoration framework (Typing safety check)
             const activeInputId = document.activeElement ? document.activeElement.id : null;
             const inputValues = {};
             box.querySelectorAll('input, textarea').forEach(input => {
                 if (input.id) inputValues[input.id] = input.value;
             });
 
-            box.innerHTML = screen.html;
+            // Clean string function lagane se pure HTML text safely execute ho jayega
+            box.innerHTML = cleanString(screen.html);
 
-            // Form states restore karna
+            // Inputs aur data fields ko refresh ke baad restore karna
             for (const id in inputValues) {
                 const inputElement = document.getElementById(id);
                 if (inputElement) inputElement.value = inputValues[id];
@@ -127,17 +137,19 @@
                 if (activeElement) activeElement.focus();
             }
 
-            // JavaScript Action logic link karna
+            // JavaScript execution controller
             const actionBtn = box.querySelector('button');
             if (actionBtn && screen.script) {
                 actionBtn.onclick = function() {
-                    const runScript = new Function(screen.script);
+                    // String code ko process karke dynamic function execute karna
+                    const cleanJsCode = cleanString(screen.script);
+                    const runScript = new Function(cleanJsCode);
                     runScript();
                 };
             }
         }
 
-        // Background Cloud Auto-Sync Har 5 Second Me
+        // Automatic Regulator loop (Har 5 Seconds me)
         setInterval(loadCloudEngine, 5000);
         loadCloudEngine();
     </script>
