@@ -5,7 +5,7 @@
     "initial_screen": "calculator"
   },
   "screens": {
-    "login": {
+    "loggin": {
       "html": "<h2>Cloud Secure Login</h2><input type='text' id='user' placeholder='Username (admin)'><input type='password' id='pass' placeholder='Password (1234)'><button id='loginBtn'>Verify & Login</button>",
       "script": "const u = document.getElementById('user').value; const p = document.getElementById('pass').value; if(u === 'admin' && p === '1234') { renderScreen('calculator'); } else { alert('Galat Username ya Password!'); }"
     },
