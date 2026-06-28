@@ -1,128 +1,116 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Cloud App HTML to JSON Converter</title>
+    <title>HTML to JSON Converter</title>
     <style>
-        body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px rgba(0,0,0,0.3); }
-        h2 { color: #38bdf8; text-align: center; margin-top: 0; }
-        label { font-weight: bold; color: #94a3b8; display: block; margin-top: 15px; margin-bottom: 5px; }
-        input, textarea { width: 100%; padding: 12px; background: #334155; border: 1px solid #475569; border-radius: 6px; color: #fff; box-sizing: border-box; font-size: 15px; }
-        textarea { font-family: monospace; height: 320px; resize: vertical; }
-        button { width: 100%; padding: 14px; background: #38bdf8; color: #0f172a; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 20px; transition: 0.2s; }
-        button:hover { background: #0ea5e9; }
-        .preview { margin-top: 20px; background: #000; padding: 15px; border-radius: 6px; overflow-x: auto; display: none; }
-        pre { margin: 0; color: #4af2a1; font-family: monospace; white-space: pre-wrap; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        textarea { width: 100%; height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-size: 16px; margin-right: 10px; }
+        button:hover { background-color: #0056b3; }
+        pre { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 4px; overflow-x: auto; max-height: 300px; }
+        .output-container { margin-top: 20px; position: relative; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Pro Cloud App JSON Generator</h2>
-    <p style="color: #94a3b8; text-align: center; font-size: 14px;">Apna Poora Professional HTML Code (Meta Tags, External Libraries aur Styles Ke Sath) Paste Karein.</p>
+    <h2>HTML to JSON Converter</h2>
+    <p>Apna HTML code neeche paste karein:</p>
+    <textarea id="htmlInput" placeholder="Yahaan HTML code paste karein..."></textarea>
+    
+    <button onclick="convertHTMLToJSON()">Convert to JSON</button>
+    <button onclick="copyJSON()">Copy JSON</button>
 
-    <label>Screen Ka ID/Naam:</label>
-    <input type="text" id="screenName" placeholder="Screen ka ID likhein..." value="pro_dashboard">
-
-    <label>Poora HTML Code Ek Sath Paste Karein:</label>
-    <textarea id="fullCodeInput" placeholder="<!DOCTYPE html>..."></textarea>
-
-    <button onclick="proExtractAndDownload()">Split & Generate Pro JSON</button>
-
-    <div class="preview" id="previewBox">
-        <label style="color: #4af2a1; margin-top: 0;">Generated JSON Preview:</label>
-        <pre id="jsonOutput"></pre>
+    <div class="output-container">
+        <h3>Output JSON:</h3>
+        <pre><code id="jsonOutput">JSON output yahaan dikhega...</code></pre>
     </div>
-</div>
 
-<script>
-function proExtractAndDownload() {
-    const screenName = document.getElementById('screenName').value.trim();
-    const rawCode = document.getElementById('fullCodeInput').value;
+    <script>
+        function convertHTMLToJSON() {
+            const htmlString = document.getElementById('htmlInput').value;
+            if (!htmlString.trim()) {
+                alert('Kripya pehle HTML code paste karein!');
+                return;
+            }
 
-    if (!screenName || !rawCode.trim()) {
-        alert("Kripya saari details bharein!");
-        return;
-    }
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(rawCode, 'text/html');
+            const jsonData = {
+                head: {
+                    title: doc.title || "",
+                    meta: []
+                },
+                css: {
+                    internal: [],
+                    external: []
+                },
+                body: {
+                    html: ""
+                },
+                script: {
+                    internal: [],
+                    external: []
+                }
+            };
 
-    // 1. External Script Sources (src wale) aur Custom JavaScript dono ko alag karna
-    const scriptElements = doc.querySelectorAll('script');
-    let externalScripts = [];
-    let customScriptText = "";
+            // Parse Meta Tags
+            const metas = doc.querySelectorAll('head meta');
+            metas.forEach(meta => {
+                const metaObj = {};
+                if (meta.getAttribute('charset')) metaObj.charset = meta.getAttribute('charset');
+                if (meta.getAttribute('name')) metaObj.name = meta.getAttribute('name');
+                if (meta.getAttribute('content')) metaObj.content = meta.getAttribute('content');
+                if (meta.getAttribute('property')) metaObj.property = meta.getAttribute('property');
+                if (Object.keys(metaObj).length > 0) jsonData.head.meta.push(metaObj);
+            });
 
-    scriptElements.forEach(script => {
-        if (script.hasAttribute('src')) {
-            externalScripts.push(script.getAttribute('src'));
-        } else {
-            customScriptText += script.textContent + "\n";
+            // Parse CSS (Stylesheets)
+            const links = doc.querySelectorAll('link[rel="stylesheet"]');
+            links.forEach(link => {
+                if (link.getAttribute('href')) jsonData.css.external.push(link.getAttribute('href'));
+            });
+
+            const styles = doc.querySelectorAll('style');
+            styles.forEach(style => {
+                jsonData.css.internal.push(style.innerHTML);
+            });
+
+            // Parse Scripts
+            const scripts = doc.querySelectorAll('script');
+            scripts.forEach(script => {
+                const src = script.getAttribute('src');
+                if (src) {
+                    jsonData.script.external.push(src);
+                } else {
+                    jsonData.script.internal.push(script.innerHTML);
+                }
+            });
+
+            // Parse Body Content (Bina script aur style tags ke)
+            const bodyClone = doc.body.cloneNode(true);
+            const removeTags = bodyClone.querySelectorAll('script, style');
+            removeTags.forEach(tag => tag.remove());
+            jsonData.body.html = bodyClone.innerHTML;
+
+            // Display Result
+            document.getElementById('jsonOutput').innerText = JSON.stringify(jsonData, null, 4);
         }
-        script.remove();
-    });
 
-    // 2. Custom CSS (<style>) aur External CSS Links dono ko manage karna
-    const styleElements = doc.querySelectorAll('style');
-    let customCssText = "";
-    styleElements.forEach(style => {
-        customCssText += style.textContent + "\n";
-        style.remove();
-    });
-
-    const linkElements = doc.querySelectorAll('link[rel="stylesheet"]');
-    let externalCss = [];
-    linkElements.forEach(link => {
-        externalCss.push(link.getAttribute('href'));
-        link.remove();
-    });
-
-    // 3. Head Quality & Metadata (Meta tags, Title) ki settings
-    let metaTagsHtml = "";
-    const metaElements = doc.querySelectorAll('meta');
-    metaElements.forEach(meta => {
-        metaTagsHtml += meta.outerHTML + "\n";
-        meta.remove();
-    });
-
-    const titleEl = doc.querySelector('title');
-    let pageTitle = titleEl ? titleEl.innerText : "Cloud App Window";
-
-    // 4. Bacha Hua Clean HTML Body Content
-    const bodyContent = doc.body ? doc.body.innerHTML.trim() : doc.documentElement.innerHTML.trim();
-
-    // Advanced Production JSON Blueprint Setup
-    const jsonStructure = {
-        "page_settings": {
-            "initial_screen": screenName,
-            "meta_tags": metaTagsHtml.trim(),
-            "title": pageTitle,
-            "external_css": externalCss,
-            "external_scripts": externalScripts,
-            "custom_css": customCssText.trim()
-        },
-        "screens": {}
-    };
-
-    jsonStructure.screens[screenName] = {
-        "html": bodyContent,
-        "script": customScriptText.trim()
-    };
-
-    const finalJsonString = JSON.stringify(jsonStructure, null, 2);
-
-    document.getElementById('jsonOutput').textContent = finalJsonString;
-    document.getElementById('previewBox').style.display = "block";
-
-    const blob = new Blob([finalJsonString], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "ui-config.json";
-    link.click();
-}
-</script>
-
+        function copyJSON() {
+            const jsonText = document.getElementById('jsonOutput').innerText;
+            if (jsonText === "JSON output yahaan dikhega..." || !jsonText) {
+                alert("Pehle HTML ko convert karein!");
+                return;
+            }
+            navigator.clipboard.writeText(jsonText).then(() => {
+                alert("JSON successfully copy ho gaya!");
+            }).catch(err => {
+                alert("Copy karne mein dikkat hui: ", err);
+            });
+        }
+    </script>
 </body>
 </html>
