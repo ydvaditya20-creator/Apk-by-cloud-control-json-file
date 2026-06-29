@@ -38,7 +38,7 @@ jobs:
 
   - name: Create Capacitor Config
     run: |
-      echo '{"appId":"com.example.myttap","appName":"MyttAp","webDir":"www"}' > capacitor.config.json
+      echo '{"appId":"com.example.myttttap","appName":"MyttttAp","webDir":"www"}' > capacitor.config.json
 
   - name: Add Android
     run: npx cap add android
